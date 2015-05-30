@@ -53,11 +53,12 @@ information.},
  keywords = {computer, email, encryption, fears, king, nuclear, pgp,
 philip, privacy, private, reveals, silent, snowden,
 surveillance, text, zimmermann},
- publish_date = {2015-05-25T00:00:00},
+ month = {5},
  title = {Philip Zimmermann: king of encryption reveals his fears for
 privacy},
  url = {http://www.theguardian.com/technology/2015/may/25/philip-
-zimmermann-king-encryption-reveals-fears-privacy}
+zimmermann-king-encryption-reveals-fears-privacy},
+ year = {2015}
 }
 <BLANKLINE>
 <BLANKLINE>
@@ -74,10 +75,9 @@ from bs4 import BeautifulSoup
 import re
 
 
-FIELDS = ['authors', 'title', 'summary', 'url', 'keywords', 'publish_date']
+FIELDS = ['authors', 'title', 'summary', 'url', 'keywords']
 FIELD_CONVERTER = {'authors': lambda l: ' and '.join(sorted(l)),
-                   'keywords': lambda l: ', '.join(sorted(l)),
-                   'publish_date': lambda d: d.isoformat()}
+                   'keywords': lambda l: ', '.join(sorted(l))}
 FIELD_TO_BIB = {'authors': 'author', 'summary': 'abstract'}
 
 
@@ -104,6 +104,9 @@ def url_to_bibentry(url):
             bib_key = field
         if value:
             bib_entry[bib_key] = textwrap.fill(f(value), width=60)
+    if article.publish_date:
+        bib_entry['year'] = str(article.publish_date.year)
+        bib_entry['month'] = str(article.publish_date.month)
     return bib_entry
 
 
