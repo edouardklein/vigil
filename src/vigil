@@ -162,6 +162,8 @@ def reddit_to_bibentry(line):
     soup = BeautifulSoup(urllib.request.urlopen(req).read())
     a = soup.findAll('p', attrs={'class': 'title'})[0].findAll('a')[0]
     target_url = a.attrs['href']
+    if target_url.startswith('/r/'):  # Self post
+        target_url = 'http://reddit.com'+target_url
     bib_entry = url_to_bibentry(target_url)
     bib_entry['Annote'] = textwrap.fill(line, 60)
     subreddit = urllib.parse.urlsplit(line).path.split('/')[2]
