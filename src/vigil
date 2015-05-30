@@ -31,7 +31,6 @@ guides, kilimanjaro, mountain, porters},
 <BLANKLINE>
 <BLANKLINE>
 
-
 >>> print(env.run('../test/hn_article.sh'))
 Script result: ../test/hn_article.sh
 -- stdout: --------------------
@@ -59,6 +58,32 @@ privacy},
  url = {http://www.theguardian.com/technology/2015/may/25/philip-
 zimmermann-king-encryption-reveals-fears-privacy},
  year = {2015}
+}
+<BLANKLINE>
+<BLANKLINE>
+<BLANKLINE>
+
+>>> print(env.run('../test/reddit_article.sh'))
+Script result: ../test/reddit_article.sh
+-- stdout: --------------------
+@misc{HowtoclimbtheKilimanjarolikeanalpinist,
+ Annote = {https://www.reddit.com/r/alpinism/comments/2f6aai/how_to_cli
+mb_the_kilimanjaro_like_an_alpinist/},
+ abstract = {On the first day, climb 700m with a 20kg backpack, on the
+second climb 1200m with only food and water. We give advice
+on how to climb Kilimanjaro without porter, with one’s own
+equipment and food, and on how to minimize the price. How to
+climb the Kilimanjaro like an alpinist Edouard Klein, edou
+-at- rdklein.frReleased under Creative Commons CC-by-SA
+licence. Therefore the short answer to “How to climb Mount
+Kilimanjaro like an alpinist” is : Don’t. 3.1 Dura lex, sed
+lexIn a perfect world, climbing Mount Kilimanjaro would be a
+matter settled between you and Mount Kilimanjaro.},
+ author = {Edou -at- Rdklein Fr and Edouard Klein},
+ keywords = {alpinist, altitude, camp, climb, climbing, day, guide,
+guides, kilimanjaro, mountain, porters, alpinism},
+ title = {How to climb the Kilimanjaro like an alpinist},
+ url = {http://rdklein.fr/essays/kilimanjaro.html}
 }
 <BLANKLINE>
 <BLANKLINE>
@@ -128,7 +153,20 @@ def HN_to_bibentry(line):
 
 
 def reddit_to_bibentry(line):
-    raise NotImplementedError()
+    '''Return the bibentry for the link the reddit discussion is about'''
+    # Reddit returns a HTTP 429 error if it does not like our user agent,
+    # see : https://stackoverflow.com/questions/13213048/urllib2-http-error-429
+    hdr = {'User-Agent':
+           'Vigil bibliographic tool : https://github.com/edouardklein/vigil'}
+    req = urllib.request.Request(line, headers=hdr)
+    soup = BeautifulSoup(urllib.request.urlopen(req).read())
+    a = soup.findAll('p', attrs={'class': 'title'})[0].findAll('a')[0]
+    target_url = a.attrs['href']
+    bib_entry = url_to_bibentry(target_url)
+    bib_entry['Annote'] = textwrap.fill(line, 60)
+    subreddit = urllib.parse.urlsplit(line).path.split('/')[2]
+    bib_entry['keywords'] += ', '+subreddit
+    return bib_entry
 
 
 def main():
