@@ -115,7 +115,7 @@ def url_to_bibentry(url):
         raise RuntimeError("Could not download : "+url)
     article.parse()
     article.nlp()
-    key = re.sub('[\W]', '', article.title)
+    key = re.sub('[\Wéàèêôîû]', '', article.title)
     bib_entry = {'type': 'misc', 'id': key}
     for field in FIELDS:
         value = article.__dict__[field]
