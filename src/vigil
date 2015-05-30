@@ -111,12 +111,14 @@ def url_to_bibentry(url):
 
 
 def bibentry_to_str(bib_entry):
+    """Dump a bibtex entry as a string"""
     db = bibtexparser.bibdatabase.BibDatabase()
     db.entries = [bib_entry]
     return bibtexparser.dumps(db)
 
 
 def HN_to_bibentry(line):
+    """Return the bibentry for the link the HN discussion is about"""
     soup = BeautifulSoup(urllib.request.urlopen(line).read())
     a = soup.findAll(attrs={'class': 'title'})[1].findAll('a')[0]
     target_url = a.attrs['href']
