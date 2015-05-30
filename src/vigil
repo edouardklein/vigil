@@ -35,7 +35,7 @@ guides, kilimanjaro, mountain, porters},
 >>> print(env.run('../test/hn_article.sh'))
 Script result: ../test/hn_article.sh
 -- stdout: --------------------
-@misc{PhilipZimmermann:kingofencryptionrevealshisfearsforprivacy,
+@misc{PhilipZimmermannkingofencryptionrevealshisfearsforprivacy,
  Annote = {https://news.ycombinator.com/item?id=9600906},
  abstract = {Zimmermann and Snowden are 30 years apart in age, but their
 actions have framed the privacy debate. British society is
@@ -71,6 +71,7 @@ import bibtexparser
 import textwrap
 import urllib
 from bs4 import BeautifulSoup
+import re
 
 
 FIELDS = ['authors', 'title', 'summary', 'url', 'keywords', 'publish_date']
@@ -87,7 +88,7 @@ def url_to_bibentry(url):
     article.download()
     article.parse()
     article.nlp()
-    key = article.title.replace(' ', '').replace('.', '')
+    key = re.sub('[\W]', '', article.title)
     bib_entry = {'type': 'misc', 'id': key}
     for field in FIELDS:
         value = article.__dict__[field]
