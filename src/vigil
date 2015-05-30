@@ -31,21 +31,56 @@ guides, kilimanjaro, mountain, porters},
 <BLANKLINE>
 <BLANKLINE>
 
+
+>>> print(env.run('../test/hn_article.sh'))
+Script result: ../test/hn_article.sh
+-- stdout: --------------------
+@misc{PhilipZimmermann:kingofencryptionrevealshisfearsforprivacy,
+ Annote = {https://news.ycombinator.com/item?id=9600906},
+ abstract = {Zimmermann and Snowden are 30 years apart in age, but their
+actions have framed the privacy debate. British society is
+“too accepting of surveillance”, Zimmermann believes. When
+Philip Zimmermann was campaigning for nuclear disarmament in
+the 1980s, he kept an escape plan in his back pocket.
+Zimmermann hopes to make money, but for the father of email
+cryptography, the political still trumps the commercial. The
+Silent Phone and Silent Text apps, which allow secure voice
+calls and text messages over Android and Apple handsets, are
+even more popular, particularly with journalists working in
+dangerous places and businesses handling sensitive
+information.},
+ author = {Juliette Garside},
+ keywords = {computer, email, encryption, fears, king, nuclear, pgp,
+philip, privacy, private, reveals, silent, snowden,
+surveillance, text, zimmermann},
+ publish_date = {2015-05-25T00:00:00},
+ title = {Philip Zimmermann: king of encryption reveals his fears for
+privacy},
+ url = {http://www.theguardian.com/technology/2015/may/25/philip-
+zimmermann-king-encryption-reveals-fears-privacy}
+}
+<BLANKLINE>
+<BLANKLINE>
+<BLANKLINE>
+
 """
 import newspaper
 import pyperclip
 from docopt import docopt
 import bibtexparser
 import textwrap
+import urllib
+from bs4 import BeautifulSoup
 
 
 FIELDS = ['authors', 'title', 'summary', 'url', 'keywords', 'publish_date']
 FIELD_CONVERTER = {'authors': lambda l: ' and '.join(sorted(l)),
-                   'keywords': lambda l: ', '.join(sorted(l))}
+                   'keywords': lambda l: ', '.join(sorted(l)),
+                   'publish_date': lambda d: d.isoformat()}
 FIELD_TO_BIB = {'authors': 'author', 'summary': 'abstract'}
 
 
-def url_to_bibtex(url):
+def url_to_bibentry(url):
     '''Return the bibtex record corresponding to the document pointed to in
     the url'''
     article = newspaper.Article(url)
@@ -66,9 +101,26 @@ def url_to_bibtex(url):
             bib_key = field
         if value:
             bib_entry[bib_key] = textwrap.fill(f(value), width=60)
+    return bib_entry
+
+
+def bibentry_to_str(bib_entry):
     db = bibtexparser.bibdatabase.BibDatabase()
     db.entries = [bib_entry]
     return bibtexparser.dumps(db)
+
+
+def HN_to_bibentry(line):
+    soup = BeautifulSoup(urllib.request.urlopen(line).read())
+    a = soup.findAll(attrs={'class': 'title'})[1].findAll('a')[0]
+    target_url = a.attrs['href']
+    bib_entry = url_to_bibentry(target_url)
+    bib_entry['Annote'] = line
+    return bib_entry
+
+
+def reddit_to_bibentry(line):
+    raise NotImplementedError()
 
 
 def main():
@@ -78,7 +130,14 @@ def main():
     input_file = arguments['input-file'] or '/dev/stdin'
     with open(input_file, 'r') as input_fd:
         for line in input_fd.readlines():
-            bib_element = url_to_bibtex(line.strip())
+            line = line.strip()
+            if 'news.ycombinator' in line:
+                bib_entry = HN_to_bibentry(line)
+            elif 'reddit.com' in line:
+                bib_entry = reddit_to_bibentry(line)
+            else:
+                bib_entry = url_to_bibentry(line.strip())
+            bib_element = bibentry_to_str(bib_entry)
             if arguments['-c']:
                 answer += bib_element
             print(bib_element)
