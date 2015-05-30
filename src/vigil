@@ -3,7 +3,7 @@
 Vigil.
 
 Usage:
-vigil [-c] [input-file]
+vigil [-c] [<input-file>]
 
 >>> from scripttest import TestFileEnvironment
 >>> env = TestFileEnvironment('./tmp')
@@ -86,6 +86,8 @@ def url_to_bibentry(url):
     the url'''
     article = newspaper.Article(url)
     article.download()
+    if not article.is_downloaded:
+        raise RuntimeError("Could not download : "+url)
     article.parse()
     article.nlp()
     key = re.sub('[\W]', '', article.title)
@@ -128,10 +130,9 @@ def main():
     '''Main function'''
     answer = ''
     arguments = docopt(__doc__, version='Vigil 0.0')
-    input_file = arguments['input-file'] or '/dev/stdin'
+    input_file = arguments['<input-file>'] or '/dev/stdin'
     with open(input_file, 'r') as input_fd:
-        for line in input_fd.readlines():
-            line = line.strip()
+        for line in [l.strip() for l in input_fd.readlines() if l.strip()]:
             if 'news.ycombinator' in line:
                 bib_entry = HN_to_bibentry(line)
             elif 'reddit.com' in line:
