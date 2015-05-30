@@ -1,0 +1,90 @@
+#!/usr/bin/env python
+"""
+Vigil.
+
+Usage:
+vigil [-c] [input-file]
+
+>>> from scripttest import TestFileEnvironment
+>>> env = TestFileEnvironment('./tmp')
+>>> print(env.run('../test/html_article.sh'))
+Script result: ../test/html_article.sh
+-- stdout: --------------------
+@misc{HowtoclimbtheKilimanjarolikeanalpinist,
+ abstract = {On the first day, climb 700m with a 20kg backpack, on the
+second climb 1200m with only food and water. We give advice
+on how to climb Kilimanjaro without porter, with one’s own
+equipment and food, and on how to minimize the price. How to
+climb the Kilimanjaro like an alpinist Edouard Klein, edou
+-at- rdklein.frReleased under Creative Commons CC-by-SA
+licence. Therefore the short answer to “How to climb Mount
+Kilimanjaro like an alpinist” is : Don’t. 3.1 Dura lex, sed
+lexIn a perfect world, climbing Mount Kilimanjaro would be a
+matter settled between you and Mount Kilimanjaro.},
+ author = {Edou -at- Rdklein Fr and Edouard Klein},
+ keywords = {alpinist, altitude, camp, climb, climbing, day, guide,
+guides, kilimanjaro, mountain, porters},
+ title = {How to climb the Kilimanjaro like an alpinist},
+ url = {http://rdklein.fr/essays/kilimanjaro.html}
+}
+<BLANKLINE>
+<BLANKLINE>
+<BLANKLINE>
+
+"""
+import newspaper
+import pyperclip
+from docopt import docopt
+import bibtexparser
+import textwrap
+
+
+FIELDS = ['authors', 'title', 'summary', 'url', 'keywords', 'publish_date']
+FIELD_CONVERTER = {'authors': lambda l: ' and '.join(sorted(l)),
+                   'keywords': lambda l: ', '.join(sorted(l))}
+FIELD_TO_BIB = {'authors': 'author', 'summary': 'abstract'}
+
+
+def url_to_bibtex(url):
+    '''Return the bibtex record corresponding to the document pointed to in
+    the url'''
+    article = newspaper.Article(url)
+    article.download()
+    article.parse()
+    article.nlp()
+    key = article.title.replace(' ', '').replace('.', '')
+    bib_entry = {'type': 'misc', 'id': key}
+    for field in FIELDS:
+        value = article.__dict__[field]
+        if field in FIELD_CONVERTER:
+            f = FIELD_CONVERTER[field]
+        else:
+            f = lambda x: x
+        if field in FIELD_TO_BIB:
+            bib_key = FIELD_TO_BIB[field]
+        else:
+            bib_key = field
+        if value:
+            bib_entry[bib_key] = textwrap.fill(f(value), width=60)
+    db = bibtexparser.bibdatabase.BibDatabase()
+    db.entries = [bib_entry]
+    return bibtexparser.dumps(db)
+
+
+def main():
+    '''Main function'''
+    answer = ''
+    arguments = docopt(__doc__, version='Vigil 0.0')
+    input_file = arguments['input-file'] or '/dev/stdin'
+    with open(input_file, 'r') as input_fd:
+        for line in input_fd.readlines():
+            bib_element = url_to_bibtex(line.strip())
+            if arguments['-c']:
+                answer += bib_element
+            print(bib_element)
+    if arguments['-c']:
+        pyperclip.copy(answer)
+    exit(0)
+
+if __name__ == '__main__':
+    main()
