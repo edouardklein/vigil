@@ -167,7 +167,10 @@ def reddit_to_bibentry(line):
     bib_entry = url_to_bibentry(target_url)
     bib_entry['Annote'] = textwrap.fill(line, 60)
     subreddit = urllib.parse.urlsplit(line).path.split('/')[2]
-    bib_entry['keywords'] += ', '+subreddit
+    if 'keywords' in bib_entry:
+        bib_entry['keywords'] += ', '+subreddit
+    else:
+        bib_entry['keywords'] = subreddit
     return bib_entry
 
 
