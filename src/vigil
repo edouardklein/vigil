@@ -89,6 +89,22 @@ guides, kilimanjaro, mountain, porters, alpinism},
 <BLANKLINE>
 <BLANKLINE>
 
+>>> print(env.run('../test/pdf_article.sh'))
+Script result: ../test/pdf_article.sh
+-- stdout: --------------------
+@inproceedings{klein2012inverse,
+ author = {Klein, Edouard and Geist, Matthieu and Piot, Bilal and
+Pietquin, Olivier},
+ booktitle = {Advances in Neural Information Processing Systems},
+ pages = {1007--1015},
+ title = {Inverse reinforcement learning through structured
+classification},
+ year = {2012}
+}
+<BLANKLINE>
+<BLANKLINE>
+<BLANKLINE>
+
 """
 import newspaper
 import pyperclip
@@ -98,6 +114,9 @@ import textwrap
 import urllib
 from bs4 import BeautifulSoup
 import re
+import scholar
+import subprocess
+import os
 
 
 FIELDS = ['authors', 'title', 'summary', 'url', 'keywords']
@@ -106,9 +125,46 @@ FIELD_CONVERTER = {'authors': lambda l: ' and '.join(sorted(l)),
 FIELD_TO_BIB = {'authors': 'author', 'summary': 'abstract'}
 
 
+def our_path():
+    """Return the dir in which vigil and the exe it needs are"""
+    return os.path.dirname(__file__)
+
+
+def pdf_to_bibentry(url):
+    """Assume the PDF the url points to is a scholarly article and look for"""
+    """it in google scholar"""
+    fname, _ = urllib.request.urlretrieve(url)
+    title = subprocess.getoutput('java -jar '+our_path()
+                                 + '/docears-pdf-inspector.jar -title '+fname)
+    querier = scholar.ScholarQuerier()
+    settings = scholar.ScholarSettings()
+    settings.set_citation_format(scholar.ScholarSettings.CITFORM_BIBTEX)
+    querier.apply_settings(settings)
+    query = scholar.SearchScholarQuery()
+    # First search with exact title, then with words
+    query.set_phrase(title)
+    querier.send_query(query)
+    if len(querier.articles) == 1:
+        bib_str = querier.articles[0].as_citation()
+    else:
+        query.set_phrase('')
+        query.set_words_some(title)
+        querier.send_query(query)
+        if len(querier.articles) != 1:
+            raise RuntimeError("Google Scholar return too few or too many"
+                               " results for search with : "+title)
+    db = bibtexparser.loads(bib_str)
+    entry = db.entries[0]
+    for key in entry:
+        entry[key] = textwrap.fill(entry[key], 60)
+    return entry
+
+
 def url_to_bibentry(url):
     '''Return the bibtex record corresponding to the document pointed to in
     the url'''
+    if url[-4:] == '.pdf':
+        return pdf_to_bibentry(url)
     article = newspaper.Article(url)
     article.download()
     if not article.is_downloaded:

@@ -91,6 +91,8 @@
 
 <p>If the URL points to a known forum (Hacker News, Reddit), the BibTeX record will be the record for the article the discussion on the forum is about, with a link to the discussion in the <code>Annote</code> field of the record.</p>
 
+<p>If the URL (or the Reddit or HN link) points to a .pdf file, we try to extract its title (thanks to docear : https://www.docear.org/software/add-ons/docears-pdf-inspector/) and get a citation using Google Scholar via scholar.py (https://github.com/ckreibich/scholar.py).</p>
+
 <h2 id="OPTIONS">OPTIONS</h2>
 
 <dl>
@@ -123,7 +125,7 @@
 
   <ol class='man-decor man-foot man foot'>
     <li class='tl'></li>
-    <li class='tc'>May 2015</li>
+    <li class='tc'>June 2015</li>
     <li class='tr'>vigil(1)</li>
   </ol>
 
